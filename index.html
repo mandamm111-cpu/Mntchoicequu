@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MCQ Hub — Builder & Player (single file, accounts)</title>
+<style>
+:root{
+  --bg:#041423; --card:#071a2a; --muted:#9fb3c8; --accent:#1fb28f; --accent2:#3ea0ff;
+  --text:#eaf4ff; --glass: rgba(255,255,255,0.03);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#021426 0%,#071227 100%);color:var(--text)}
+.app{max-width:980px;margin:18px auto;padding:16px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;flex-direction:column}
+.brand h1{margin:0;font-size:20px}
+.muted{color:var(--muted);font-size:13px}
+.nav{display:flex;gap:8px}
+.btn{background:linear-gradient(90deg,var(--accent2),var(--accent));color:#021;padding:10px 12px;border-radius:10px;border:0;cursor:pointer;text-decoration:none}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text)}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:16px;margin-top:14px;box-shadow:0 8px 30px rgba(2,6,23,.6)}
+.grid{display:flex;gap:10px;flex-wrap:wrap}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.small{padding:8px 10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+.section{display:none}
+.section.active{display:block}
+.controls{display:flex;gap:8px;align-items:center}
+.form-grid{display:grid;gap:10px}
+textarea,input,select,button{font-family:inherit}
+textarea, input[type="text"], input[type="file"], select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--text)}
+textarea{min-height:70px}
+.cols{display:grid;gap:8px;grid-template-columns:repeat(2,1fr)}
+@media(min-width:900px){.cols{grid-template-columns:repeat(3,1fr)}}
+.list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.qcard{background:var(--glass);padding:12px;border-radius:10px;display:flex;flex-direction:column;gap:8px}
+.qmeta{display:flex;justify-content:space-between;align-items:center}
+.qtext{font-size:15px}
+.qimage img{max-width:100%;border-radius:8px;display:block;margin-top:8px}
+.choices{display:grid;gap:8px;margin-top:12px}
+.choice-btn{padding:12px;border-radius:10px;border:0;background:rgba(255,255,255,0.02);color:var(--text);text-align:left;font-size:16px;cursor:pointer}
+.choice-btn.correct{background:linear-gradient(90deg,#0f7f4c,#24b77b);color:#fff;box-shadow:0 6px 18px rgba(23,139,80,0.12)}
+.choice-btn.wrong{background:linear-gradient(90deg,#9a3b3b,#d06969);color:#fff;box-shadow:0 6px 18px rgba(159,67,67,0.12)}
+.explain{margin-top:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);color:var(--muted)}
+.progress-bar{height:8px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%}
+.footer{margin-top:14px;text-align:center;color:var(--muted);font-size:13px}
+.sep{height:1px;background:rgba(255,255,255,0.02);margin:12px 0;border-radius:2px}
+.filearea{display:flex;gap:8px;align-items:center}
+.kv{display:flex;gap:8px;align-items:center}
+.avatar{width:36px;height:36px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.04)}
+.center{display:flex;align-items:center;justify-content:center}
+.feed-grid{display:grid;gap:10px;grid-template-columns:repeat(2,1fr)}
+@media(min-width:900px){.feed-grid{grid-template-columns:repeat(3,1fr)}}
+.login-card{max-width:420px;margin:40px auto;padding:20px}
+.small-muted{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand">
+      <h1>MCQ Hub</h1>
+      <div class="muted" id="brandSubtitle">Create • Save • Play — on your phone</div>
+    </div>
+
+    <div class="nav" id="mainNav">
+      <button class="btn" id="navHome">Home</button>
+      <button class="btn ghost" id="navBuilder">Builder</button>
+      <button class="btn ghost" id="navPlayer">Player</button>
+      <button class="btn ghost" id="navExplore">Explore</button>
+      <button class="btn ghost" id="btnLogout" style="display:none">Logout</button>
+    </div>
+  </div>
+
+  <!-- LOGIN (replaces initial Home until login) -->
+  <section id="login" class="section active">
+    <div class="card login-card center">
+      <h2 class="center">Login / Register</h2>
+      <div class="muted small-muted center" style="margin-bottom:8px">Accounts stored locally on your device</div>
+      <label>Username <input id="loginUser" placeholder="username (letters,numbers)"></label>
+      <label>Password <input id="loginPass" type="password" placeholder="password"></label>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="btnLogin">Login</button>
+        <button class="btn ghost" id="btnCreate">Create Account</button>
+      </div>
+      <div class="row" style="margin-top:10px;justify-content:center">
+        <button class="small" id="btnContinueGuest">Continue as Guest (local only)</button>
+      </div>
+      <div class="sep"></div>
+      <div class="muted small-muted">Note: This is a local account system (no external server). Use for quick multi-user testing.</div>
+    </div>
+  </section>
+
+  <!-- HOME -->
+  <section id="home" class="section">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h2 id="homeTitle">Welcome</h2>
+          <div class="muted" id="homeSub">Create quizzes, save to account, and publish posts.</div>
+        </div>
+        <div class="kv" id="userInfoWrap" style="display:none">
+          <img id="userAvatar" class="avatar" src="" alt="avatar" />
+          <div style="margin-left:8px">
+            <div id="userName" style="font-weight:600"></div>
+            <div class="small-muted" id="userMeta"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:12px">
+        <button class="btn" id="goCreate">➕ Create / Edit Quiz</button>
+        <button class="btn ghost" id="goPlay">▶ Play Last Quiz</button>
+        <button class="btn ghost" id="goMyQuizzes">📚 My Quizzes</button>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="small" id="btnPublish">Post Current Quiz</button>
+        <button class="small" id="btnManagePosts">Manage My Posts</button>
+      </div>
+
+      <div style="margin-top:12px" class="muted" id="statusText">Status: not ready</div>
+
+      <div class="sep"></div>
+
+      <div>
+        <label class="muted">Quick import JSON (paste below then click Apply):</label>
+        <textarea id="pasteJson" placeholder='Paste JSON here ({"questions":[...]})'></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="small" id="applyPaste">Apply JSON</button>
+          <button class="small" id="sampleCSV">Show CSV format</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BUILDER -->
+  <section id="builder" class="section">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <a class="btn ghost" id="backHome">← Home</a>
+          <h2 style="display:inline-block;margin-left:10px">Create Quiz</h2>
+        </div>
+        <div class="muted">Saved to your local account</div>
+      </div>
+
+      <div class="form-grid" style="margin-top:12px">
+        <label>Quiz Title <input id="quizTitle" placeholder="Give your quiz a title (optional)"></label>
+        <label>Thumbnail (optional) <input id="quizThumb" type="file" accept="image/*"></label>
+
+        <label>Question
+          <textarea id="q_text" placeholder="Type the question..."></textarea>
+        </label>
+
+        <label>Image (optional)
+          <input id="q_image" type="file" accept="image/*">
+        </label>
+
+        <div class="cols">
+          <label>Option A <input id="optA" placeholder="Choice A"></label>
+          <label>Option B <input id="optB" placeholder="Choice B"></label>
+          <label>Option C <input id="optC" placeholder="Choice C"></label>
+          <label>Option D <input id="optD" placeholder="Choice D"></label>
+          <label>Option E <input id="optE" placeholder="Choice E"></label>
+        </div>
+
+        <label>Correct answer
+          <select id="optCorrect"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select>
+        </label>
+
+        <label>Explanation (optional)
+          <textarea id="q_explain" placeholder="Short explanation to show after answering..."></textarea>
+        </label>
+
+        <label>Optional audio for this question <input id="q_audio" type="file" accept="audio/*"></label>
+
+        <div class="row">
+          <button class="btn" id="addQ">+ Add / Save Question</button>
+          <button class="btn ghost" id="startPlay">▶ Play This Quiz</button>
+        </div>
+
+        <div class="row">
+          <button class="small" id="saveToAccount">Save Quiz to Account</button>
+          <button class="small" id="saveJSON">Export JSON</button>
+          <button class="small" id="exportCSV">Export CSV</button>
+          <button class="small" id="clearList">Clear All Questions</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>Questions (<span id="count">0</span>)</h3>
+      <div id="listArea" class="list"></div>
+    </div>
+  </section>
+
+  <!-- PLAYER -->
+  <section id="player" class="section">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <a class="btn ghost" id="toBuilder">← Builder</a>
+          <h2 style="display:inline-block;margin-left:10px">Play Quiz</h2>
+        </div>
+        <div class="muted">Answer with touch or keys (A–E)</div>
+      </div>
+
+      <div class="row between" style="margin-top:10px">
+        <div class="muted" id="progressText">0 / 0</div>
+        <div class="muted">Score: <span id="scoreText">0</span></div>
+      </div>
+
+      <div id="qImageWrap" style="display:none;margin-top:10px" class="qimage"><img id="qImage" alt="question image"></div>
+
+      <h2 id="qText" class="qtext" style="margin-top:12px">No questions loaded.</h2>
+
+      <div id="choices" class="choices"></div>
+
+      <div id="explain" class="explain" style="display:none"></div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="small" id="prevBtn">◀ Prev</button>
+        <button class="btn ghost" id="nextBtn">Next ▶</button>
+        <label class="tog"><input id="autoNext" type="checkbox"> Auto-next</label>
+        <label class="tog">Delay <input id="delay" type="range" min="200" max="2500" value="900"></label>
+        <button class="btn ghost" id="restartBtn">Restart</button>
+      </div>
+
+      <div class="progress-bar" style="margin-top:12px"><div id="progressFill" class="progress-fill"></div></div>
+    </div>
+  </section>
+
+  <!-- EXPLORE / FEED -->
+  <section id="explore" class="section">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><h2>Explore Posts</h2><div class="muted small-muted">Play quizzes shared by other users</div></div>
+        <div><button class="btn ghost" id="refreshFeed">Refresh</button></div>
+      </div>
+
+      <div id="feedArea" style="margin-top:12px" class="feed-grid"></div>
+    </div>
+  </section>
+
+  <!-- MANAGE POSTS -->
+  <section id="myposts" class="section">
+    <div class="card">
+      <h2>My Posts</h2>
+      <div id="myPostsArea" class="list"></div>
+    </div>
+  </section>
+
+  <div class="footer">Tip: Save to account so you can publish quizzes and let others play them.</div>
+</div>
+
+<script>
+/* ---------------- Constants & Storage keys ---------------- */
+const USERS_KEY = 'mcq_users';           // object of users
+const CURRENT_USER_KEY = 'mcq_current'; // current username
+const SESSION_LAST_QUIZ = 'mcq_last_quiz'; // id of last saved/played quiz
+const POSTS_KEY = 'mcq_posts';          // public posts (object)
+
+/* ---------------- Utilities ---------------- */
+function uid(len=8){ return Math.random().toString(36).slice(2,2+len) }
+function now(){ return Date.now() }
+function readStorage(k, fallback = {}) {
+  try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fallback)); } catch(e){ return fallback; }
+}
+function writeStorage(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+
+/* ---------------- Simple WebAudio for feedback (no file needed) ---------------- */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function tone(freq, time=0.12, type='sine'){
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  o.connect(g); g.connect(audioCtx.destination);
+  g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + time);
+  setTimeout(()=>{ o.stop(); o.disconnect(); g.disconnect(); }, (time+0.05)*1000);
+}
+function playCorrect(){ try{ tone(880,0.12,'sine'); tone(1320,0.08,'sine'); }catch(e){} }
+function playWrong(){ try{ tone(220,0.14,'square'); }catch(e){} }
+
+/* ---------------- Account helpers ---------------- */
+function ensureUserObj(){
+  const users = readStorage(USERS_KEY, {});
+  return users;
+}
+function createAccount(username, password){
+  const users = ensureUserObj();
+  if(users[username]) return {ok:false, msg:'Username already exists'};
+  users[username] = { password, quizzes: {}, posts: [] , avatar: '', createdAt: now() };
+  writeStorage(USERS_KEY, users);
+  return {ok:true};
+}
+function loginUser(username, password){
+  const users = ensureUserObj();
+  if(!users[username]) return {ok:false, msg:'User not found'};
+  if(users[username].password !== password) return {ok:false, msg:'Wrong password'};
+  localStorage.setItem(CURRENT_USER_KEY, username);
+  return {ok:true};
+}
+function logoutUser(){
+  localStorage.removeItem(CURRENT_USER_KEY);
+}
+function currentUser(){
+  return localStorage.getItem(CURRENT_USER_KEY) || null;
+}
+
+/* ---------------- Posts helpers ---------------- */
+function readPosts(){ return readStorage(POSTS_KEY, {}); }
+function writePosts(obj){ writeStorage(POSTS_KEY, obj); }
+
+/* ---------------- App state ---------------- */
+let appState = {
+  // temporary builder state (not yet saved)
+  draft: { id: null, title:'', thumbnail:null, questions: [] }
+};
+
+/* ---------------- UI references ---------------- */
+const sections = {
+  login: document.getElementById('login'),
+  home: document.getElementById('home'),
+  builder: document.getElementById('builder'),
+  player: document.getElementById('player'),
+  explore: document.getElementById('explore'),
+  myposts: document.getElementById('myposts')
+};
+const statusText = document.getElementById('statusText');
+const userInfoWrap = document.getElementById('userInfoWrap');
+const userNameEl = document.getElementById('userName');
+const userAvatarEl = document.getElementById('userAvatar');
+const userMetaEl = document.getElementById('userMeta');
+const brandSubtitle = document.getElementById('brandSubtitle');
+
+/* show/hide sections */
+function showSection(id){
+  Object.values(sections).forEach(s=>s.classList.remove('active'));
+  if(sections[id]) sections[id].classList.add('active');
+  // header nav visibility
+  document.getElementById('btnLogout').style.display = currentUser() ? 'inline-block' : 'none';
+}
+
+/* ---------------- Init UI events (nav + login) ---------------- */
+document.getElementById('btnLogin').onclick = ()=>{
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  if(!u || !p){ alert('Fill username & password'); return; }
+  const res = loginUser(u,p);
+  if(!res.ok){ alert(res.msg); return; }
+  afterLogin();
+};
+document.getElementById('btnCreate').onclick = ()=>{
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  if(!u || !p){ alert('Fill username & password'); return; }
+  const res = createAccount(u,p);
+  if(!res.ok){ alert(res.msg); return; }
+  loginUser(u,p);
+  afterLogin();
+};
+document.getElementById('btnContinueGuest').onclick = ()=>{
+  // create ephemeral guest user with random name
+  const guest = 'guest_' + uid(4);
+  createAccount(guest, 'guest');
+  loginUser(guest, 'guest');
+  afterLogin();
+};
+document.getElementById('btnLogout').onclick = ()=>{
+  if(!confirm('Logout?')) return;
+  logoutUser();
+  location.reload();
+};
+
+/* nav buttons */
+document.getElementById('navHome').onclick = ()=> { showSection('home'); refreshHome(); };
+document.getElementById('navBuilder').onclick = ()=> { showSection('builder'); initBuilder(); };
+document.getElementById('navPlayer').onclick = ()=> { showSection('player'); initPlayer(); };
+document.getElementById('navExplore').onclick = ()=> { showSection('explore'); renderFeed(); };
+document.getElementById('goCreate').onclick = ()=> { showSection('builder'); initBuilder(); scrollToTop(); };
+document.getElementById('goPlay').onclick = ()=> { showSection('player'); initPlayer(); };
+
+/* Home actions */
+document.getElementById('applyPaste').onclick = ()=>{
+  const txt = document.getElementById('pasteJson').value.trim();
+  if(!txt){ alert('Paste some JSON'); return; }
+  try{
+    const parsed = JSON.parse(txt);
+    if(parsed.questions || Array.isArray(parsed)){
+      // store as draft in appState
+      appState.draft = { id: null, title: parsed.title || '', thumbnail: parsed.thumbnail||null, questions: parsed.questions || parsed };
+      alert('Applied JSON to draft. Go to Builder to edit/save.');
+      showSection('builder'); initBuilder();
+    } else alert('JSON must be {questions:[...]} or an array');
+  }catch(e){ alert('Invalid JSON'); }
+};
+document.getElementById('sampleCSV').onclick = ()=>{
+  alert('CSV format (one line per question):\nQuestion | optionA | optionB | optionC | optionD | optionE | Answer(A/B/C/D/E) | Explanation(optional)\nNote: CSV export does not include images or audio.');
+};
+
+/* Publish current quiz UI */
+document.getElementById('btnPublish').onclick = ()=>{
+  // require logged in
+  const user = currentUser();
+  if(!user){ alert('Login first'); showSection('login'); return; }
+  // ensure draft exists or load last saved quiz
+  let quiz = appState.draft;
+  if(!quiz || !quiz.questions || !quiz.questions.length){
+    // try last saved quiz from account
+    const users = ensureUserObj();
+    const uobj = users[user];
+    const lastId = localStorage.getItem(SESSION_LAST_QUIZ);
+    if(lastId && uobj && uobj.quizzes && uobj.quizzes[lastId]) quiz = uobj.quizzes[lastId];
+  }
+  if(!quiz || !quiz.questions || !quiz.questions.length){ alert('No quiz to publish. Create one first.'); return; }
+
+  const title = prompt('Post title (short):', quiz.title || '');
+  if(!title) return;
+  const thumbnail = quiz.thumbnail || '';
+  const editable = confirm('Allow others to edit this post? (OK = editable, Cancel = view-only)');
+  const posts = readPosts();
+  const postId = 'post_'+uid(6);
+  posts[postId] = {
+    id: postId,
+    owner: user,
+    title,
+    thumbnail,
+    quiz: JSON.parse(JSON.stringify(quiz)), // copy
+    editable: Boolean(editable),
+    createdAt: now()
+  };
+  writePosts(posts);
+  // register post to user
+  const users = ensureUserObj();
+  users[user].posts = users[user].posts || [];
+  users[user].posts.unshift(postId);
+  writeStorage(USERS_KEY, users);
+  alert('Published! Visible in Explore.');
+};
+
+/* Manage my posts */
+document.getElementById('btnManagePosts').onclick = ()=>{
+  const user = currentUser();
+  if(!user){ alert('Login first'); showSection('login'); return; }
+  showSection('myposts');
+  renderMyPosts();
+};
+
+/* refresh home info */
+function refreshHome(){
+  const u = currentUser();
+  if(u){
+    const users = ensureUserObj();
+    const uobj = users[u] || {};
+    userInfoWrap.style.display = 'flex';
+    userNameEl.textContent = u;
+    userAvatarEl.src = uobj.avatar || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAQAAABi6V7bAAAAIUlEQVR4Ae3BAQ0AAADCoPdPbQ43oAAAAAAAAAAAAAAAAAAAAADwG4oAAc8x6SoAAAAASUVORK5CYII=';
+    userMetaEl.textContent = `Quizzes: ${Object.keys(uobj.quizzes||{}).length} • Posts: ${ (uobj.posts||[]).length }`;
+    brandSubtitle.textContent = 'Logged in — your data is local to this device';
+  } else {
+    userInfoWrap.style.display = 'none';
+    brandSubtitle.textContent = 'Create • Save • Play — on your phone';
+  }
+  statusText.textContent = 'Ready';
+}
+
+/* After login actions */
+function afterLogin(){
+  refreshHome();
+  // load last draft if exists
+  const user = currentUser();
+  if(user){
+    const users = ensureUserObj();
+    const uobj = users[user];
+    // if there is session last quiz id, load that into draft
+    const lastId = localStorage.getItem(SESSION_LAST_QUIZ);
+    if(lastId && uobj && uobj.quizzes && uobj.quizzes[lastId]){
+      appState.draft = JSON.parse(JSON.stringify(uobj.quizzes[lastId]));
+    }
+  }
+  showSection('home');
+}
+
+/* ---------------- Builder Implementation ---------------- */
+function initBuilder(){
+  showSection('builder');
+  refreshHome();
+
+  // form elements
+  const q_text = document.getElementById('q_text');
+  const q_image = document.getElementById('q_image');
+  const q_audio = document.getElementById('q_audio');
+  const optA = document.getElementById('optA');
+  const optB = document.getElementById('optB');
+  const optC = document.getElementById('optC');
+  const optD = document.getElementById('optD');
+  const optE = document.getElementById('optE');
+  const optCorrect = document.getElementById('optCorrect');
+  const q_explain = document.getElementById('q_explain');
+  const addQ = document.getElementById('addQ');
+  const listArea = document.getElementById('listArea');
+  const countEl = document.getElementById('count');
+  const quizTitle = document.getElementById('quizTitle');
+  const quizThumb = document.getElementById('quizThumb');
+
+  // load draft into form if exists
+  if(!appState.draft) appState.draft = { id:null, title:'', thumbnail:null, questions:[] };
+  // if draft empty and user has last saved quiz, try load it
+  if(appState.draft && appState.draft.questions && appState.draft.questions.length){
+    // use as-is
+  } else {
+    const user = currentUser();
+    if(user){
+      const users = ensureUserObj();
+      const lastId = localStorage.getItem(SESSION_LAST_QUIZ);
+      if(lastId && users[user] && users[user].quizzes && users[user].quizzes[lastId]){
+        appState.draft = JSON.parse(JSON.stringify(users[user].quizzes[lastId]));
+      }
+    }
+  }
+  // ensure structure
+  if(!appState.draft.title) appState.draft.title = '';
+  if(!appState.draft.thumbnail) appState.draft.thumbnail = null;
+  if(!appState.draft.questions) appState.draft.questions = [];
+
+  quizTitle.value = appState.draft.title || '';
+
+  function renderList(){
+    listArea.innerHTML = '';
+    appState.draft.questions.forEach((qq, idx)=>{
+      const div = document.createElement('div'); div.className='qcard';
+      const meta = document.createElement('div'); meta.className='qmeta';
+      meta.innerHTML = `<div><strong>#${idx+1}</strong> ${escapeHtml((qq.question||'')).slice(0,120)}</div>
+                        <div><button class="small" data-id="${qq.id}" data-action="del">Delete</button>
+                        <button class="small" data-id="${qq.id}" data-action="edit">Edit</button></div>`;
+      div.appendChild(meta);
+
+      if(qq.thumbnail || qq.image){
+        const imgWrap = document.createElement('div'); imgWrap.className='qimage';
+        imgWrap.innerHTML = `<img src="${qq.image||qq.thumbnail}" />`;
+        div.appendChild(imgWrap);
+      }
+
+      const qtxt = document.createElement('div'); qtxt.className='qtext'; qtxt.textContent = qq.question || '';
+      div.appendChild(qtxt);
+
+      const optlist = document.createElement('div'); optlist.className='muted';
+      optlist.innerHTML = `A: ${qq.options[0]||''} • B: ${qq.options[1]||''} • C: ${qq.options[2]||''} • D: ${qq.options[3]||''} • E: ${qq.options[4]||''} <br><em>Answer: ${qq.answer||''}</em>`;
+      div.appendChild(optlist);
+
+      // if audio present, show play
+      if(qq.audio){
+        const play = document.createElement('button'); play.className='small'; play.textContent='Play Q Audio';
+        play.onclick = ()=> { const a = new Audio(qq.audio); a.play(); };
+        div.appendChild(play);
+      }
+
+      listArea.appendChild(div);
+    });
+    countEl.textContent = appState.draft.questions.length;
+  }
+
+  function resetForm(){
+    q_text.value=''; optA.value=''; optB.value=''; optC.value=''; optD.value=''; optE.value=''; optCorrect.value='A'; q_explain.value=''; q_image.value=''; q_audio.value='';
+  }
+
+  // thumbnail upload handler (for whole quiz)
+  quizThumb.onchange = (e)=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    const fr = new FileReader();
+    fr.onload = ()=> { appState.draft.thumbnail = fr.result; alert('Thumbnail ready (saved in draft).'); };
+    fr.readAsDataURL(f);
+  };
+
+  // Add / Save question
+  addQ.onclick = async ()=>{
+    if(!q_text.value.trim()){ alert('Fill question'); return; }
+    const choices = [optA.value.trim(), optB.value.trim(), optC.value.trim(), optD.value.trim(), optE.value.trim()];
+    // read image + audio sequentially if provided
+    let imageData = null, audioData = null;
+    if(q_image.files && q_image.files[0]){
+      imageData = await readFileAsDataURL(q_image.files[0]);
+    }
+    if(q_audio.files && q_audio.files[0]){
+      audioData = await readFileAsDataURL(q_audio.files[0]);
+    }
+    const item = {
+      id: uid(10),
+      question: q_text.value.trim(),
+      options: choices,
+      answer: optCorrect.value,
+      explanation: q_explain.value.trim(),
+      image: imageData,
+      audio: audioData,
+      createdAt: now()
+    };
+    // If editing existing (we remove old on edit), simple push back
+    appState.draft.questions.push(item);
+    renderList(); resetForm();
+    alert('Question added to draft.');
+  };
+
+  // list actions (delete/edit)
+  listArea.onclick = (e)=>{
+    const b = e.target.closest('button');
+    if(!b || !b.dataset.action) return;
+    const id = b.dataset.id, act = b.dataset.action;
+    const idx = appState.draft.questions.findIndex(x=>x.id===id);
+    if(idx===-1) return;
+    if(act==='del'){ if(confirm('Delete this question?')){ appState.draft.questions.splice(idx,1); renderList(); } }
+    if(act==='edit'){
+      const q = appState.draft.questions[idx];
+      // populate form
+      q_text.value = q.question || '';
+      optA.value = q.options[0]||''; optB.value = q.options[1]||''; optC.value = q.options[2]||''; optD.value = q.options[3]||''; optE.value = q.options[4]||'';
+      optCorrect.value = q.answer||'A'; q_explain.value = q.explanation||'';
+      // remove old item
+      appState.draft.questions.splice(idx,1);
+      renderList();
+      scrollToTop();
+    }
+  };
+
+  // Save to account (store quiz into user's quizzes)
+  document.getElementById('saveToAccount').onclick = ()=>{
+    const user = currentUser();
+    if(!user){ alert('Login to save to account'); showSection('login'); return; }
+    const title = quizTitle.value.trim() || prompt('Quiz title (short):', appState.draft.title || '') || 'Untitled Quiz';
+    appState.draft.title = title;
+    // ensure id
+    if(!appState.draft.id) appState.draft.id = 'quiz_'+uid(6);
+    // write to user object
+    const users = ensureUserObj();
+    users[user].quizzes = users[user].quizzes || {};
+    users[user].quizzes[appState.draft.id] = JSON.parse(JSON.stringify(appState.draft));
+    writeStorage(USERS_KEY, users);
+    // record last quiz id in session
+    localStorage.setItem(SESSION_LAST_QUIZ, appState.draft.id);
+    alert('Saved to your account.');
+    refreshHome();
+  };
+
+  // export JSON
+  document.getElementById('saveJSON').onclick = ()=>{
+    if(!appState.draft || !appState.draft.questions.length){ alert('No quiz to export'); return; }
+    const blob = new Blob([JSON.stringify(appState.draft, null, 2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mcq_quiz.json'; a.click();
+  };
+
+  // export CSV
+  document.getElementById('exportCSV').onclick = ()=>{
+    if(!appState.draft || !appState.draft.questions.length){ alert('No questions to export'); return; }
+    const lines = appState.draft.questions.map(q=> [q.question, ...(q.options||[]).slice(0,5), q.answer, q.explanation||''].join(' | '));
+    const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mcq_export.txt'; a.click();
+  };
+
+  document.getElementById('clearList').onclick = ()=>{
+    if(confirm('Clear all questions in draft?')){ appState.draft.questions = []; renderList(); }
+  };
+
+  document.getElementById('startPlay').onclick = ()=>{
+    // save draft to session (not necessarily account) so player can load
+    if(!appState.draft || !appState.draft.questions.length){ alert('No questions to play'); return; }
+    // store temporary to sessionStorage to allow player to pick up
+    sessionStorage.setItem('mcq_play_temp', JSON.stringify(appState.draft));
+    localStorage.setItem(SESSION_LAST_QUIZ, appState.draft.id || '');
+    showSection('player'); initPlayer();
+  };
+
+  renderList();
+}
+
+/* helper: read file as dataURL */
+function readFileAsDataURL(file){
+  return new Promise((res, rej)=>{
+    const fr = new FileReader();
+    fr.onload = ()=> res(fr.result);
+    fr.onerror = ()=> rej('read error');
+    fr.readAsDataURL(file);
+  });
+}
+
+/* ---------------- Player Implementation ---------------- */
+function initPlayer(){
+  showSection('player');
+  refreshHome();
+
+  // load quiz: prefer session temp, else last saved from account
+  let quiz = null;
+  const temp = sessionStorage.getItem('mcq_play_temp');
+  if(temp){
+    try{ quiz = JSON.parse(temp); }catch(e){ quiz = null; }
+  }
+  if(!quiz){
+    const lastId = localStorage.getItem(SESSION_LAST_QUIZ);
+    const user = currentUser();
+    if(lastId && user){
+      const users = ensureUserObj(); if(users[user] && users[user].quizzes && users[user].quizzes[lastId]) quiz = JSON.parse(JSON.stringify(users[user].quizzes[lastId]));
+    }
+  }
+  if(!quiz){ alert('No quiz available to play. Create or load one first.'); showSection('builder'); return; }
+
+  // player state
+  let questions = (quiz.questions||[]).slice();
+  let current = 0, score = 0, answered = 0;
+  const qText = document.getElementById('qText');
+  const qImageWrap = document.getElementById('qImageWrap');
+  const qImage = document.getElementById('qImage');
+  const choicesEl = document.getElementById('choices');
+  const explainEl = document.getElementById('explain');
+  const progressText = document.getElementById('progressText');
+  const scoreText = document.getElementById('scoreText');
+  const autoNext = document.getElementById('autoNext');
+  const delayEl = document.getElementById('delay');
+  const nextBtn = document.getElementById('nextBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const progressFill = document.getElementById('progressFill');
+
+  // per-question answer memory
+  const userAnswers = {}; // id -> {choice, correct}
+
+  let autoTimer = null;
+
+  function render(){
+    choicesEl.innerHTML = ''; explainEl.style.display='none'; explainEl.innerHTML='';
+    if(!questions.length){ qText.textContent = 'No questions available. Go to Builder to create.'; progressText.textContent='0 / 0'; scoreText.textContent='0'; progressFill.style.width = '0%'; return; }
+    const q = questions[current];
+    progressText.textContent = `${current+1} / ${questions.length}`;
+    scoreText.textContent = score;
+    qText.textContent = q.question || '';
+    if(q.image){ qImage.src = q.image; qImageWrap.style.display='block'; } else { qImage.src=''; qImageWrap.style.display='none'; }
+
+    const opts = q.options.map((t,i)=> ({letter:['A','B','C','D','E'][i], text:t}));
+    opts.forEach(o=>{
+      const btn = document.createElement('button'); btn.className='choice-btn'; btn.innerHTML = `<strong>${o.letter}.</strong> ${o.text}`; btn.dataset.choice = o.letter;
+      btn.onclick = ()=> selectChoice(btn, o.letter);
+      choicesEl.appendChild(btn);
+    });
+
+    // restore previous answer if any
+    const prev = userAnswers[q.id];
+    if(prev){
+      Array.from(choicesEl.children).forEach(b=>{
+        b.disabled = true;
+        if(b.dataset.choice === prev.choice){
+          b.classList.add(prev.correct ? 'correct' : 'wrong');
+        }
+        if(prev.correct && b.dataset.choice === q.answer) b.classList.add('correct');
+      });
+      if(q.explanation){
+        explainEl.style.display='block';
+        explainEl.innerHTML = `<strong>Jawaban: ${q.answer}</strong><div style="margin-top:8px;color:var(--muted)">${escapeHtml(q.explanation)}</div>`;
+      }
+    }
+
+    progressFill.style.width = `${Math.round(((current)/questions.length)*100)}%`;
+  }
+
+  function selectChoice(btn, letter){
+    if(!questions.length) return;
+    const q = questions[current];
+    // disable answers
+    Array.from(choicesEl.children).forEach(b=> b.disabled = true);
+    const correct = (letter === q.answer);
+    if(correct){ btn.classList.add('correct'); score++; playCorrect(); } else { btn.classList.add('wrong'); playWrong(); }
+    // highlight correct if wrong
+    if(!correct){
+      const corr = Array.from(choicesEl.children).find(b => b.dataset.choice === q.answer);
+      if(corr) corr.classList.add('correct');
+    }
+    answered++;
+    if(q.explanation){
+      explainEl.style.display='block';
+      explainEl.innerHTML = `<strong>Jawaban: ${q.answer}</strong><div style="margin-top:8px;color:var(--muted)">${escapeHtml(q.explanation)}</div>`;
+    }
+    scoreText.textContent = score;
+    // save to memory so prev works
+    userAnswers[q.id] = { choice: letter, correct };
+
+    // if question has audio, play
+    if(q.audio){
+      const a = new Audio(q.audio);
+      a.play().catch(()=>{ /* ignore */ });
+    }
+
+    // auto next
+    if(autoNext.checked){
+      clearTimeout(autoTimer);
+      autoTimer = setTimeout(()=> goNext(), Number(delayEl.value) || 900);
+    }
+  }
+
+  function goNext(){
+    if(!questions.length) return;
+    if(current < questions.length - 1){ current++; render(); }
+    else {
+      // finished
+      qText.textContent = 'Done! 🎉'; choicesEl.innerHTML=''; explainEl.style.display='block';
+      explainEl.innerHTML = `<div>Score: ${score} / ${answered} (${questions.length} questions)</div>`;
+      progressText.textContent = `${questions.length} / ${questions.length}`;
+      progressFill.style.width = '100%';
+      // clear temp session
+      sessionStorage.removeItem('mcq_play_temp');
+    }
+  }
+
+  function goPrev(){
+    if(current > 0){
+      current--;
+      render();
+    }
+  }
+
+  nextBtn.onclick = ()=> goNext();
+  prevBtn.onclick = ()=> goPrev();
+  restartBtn.onclick = ()=> { if(confirm('Restart quiz?')){ current = 0; score = 0; answered = 0; for(const k in userAnswers) delete userAnswers[k]; render(); } };
+
+  // keyboard support
+  window.addEventListener('keydown', (e)=>{
+    const k = e.key.toUpperCase();
+    if(['A','B','C','D','E'].includes(k)){
+      const btn = Array.from(choicesEl.children).find(b => b.dataset.choice === k);
+      if(btn && !btn.disabled) btn.click();
+    } else if(k === 'N' || k === ' '){ e.preventDefault(); goNext(); }
+    else if(k === 'P'){ goPrev(); }
+  });
+
+  render();
+}
+
+/* ---------------- Explore / Feed ---------------- */
+function renderFeed(){
+  showSection('explore');
+  const feedArea = document.getElementById('feedArea');
+  feedArea.innerHTML = '';
+  const posts = readPosts();
+  const keys = Object.keys(posts).sort((a,b)=> posts[b].createdAt - posts[a].createdAt);
+  if(!keys.length){ feedArea.innerHTML = '<div class="muted">No posts yet.</div>'; return; }
+  keys.forEach(id=>{
+    const p = posts[id];
+    const card = document.createElement('div'); card.className='qcard';
+    const thumb = p.thumbnail || '';
+    card.innerHTML = `<div style="font-weight:600">${escapeHtml(p.title)}</div>
+                      <div class="small-muted">by ${escapeHtml(p.owner)}</div>
+                      ${thumb?`<div style="margin-top:8px"><img src="${thumb}" style="width:100%;border-radius:8px"/></div>`:''}`;
+    const row = document.createElement('div'); row.className='row';
+    const play = document.createElement('button'); play.className='small'; play.textContent='Play';
+    play.onclick = ()=>{
+      // load this post's quiz into session and go to player
+      sessionStorage.setItem('mcq_play_temp', JSON.stringify(p.quiz));
+      showSection('player'); initPlayer();
+    };
+    row.appendChild(play);
+    if(currentUser() === p.owner){
+      const edit = document.createElement('button'); edit.className='small'; edit.textContent='Edit Post';
+      edit.onclick = ()=>{
+        // if editable true or owner, allow editing the quiz in builder
+        sessionStorage.setItem('mcq_play_temp', JSON.stringify(p.quiz));
+        // load into draft and allow user to save
+        appState.draft = JSON.parse(JSON.stringify(p.quiz));
+        showSection('builder'); initBuilder();
+      };
+      row.appendChild(edit);
+    }
+    card.appendChild(row);
+    feedArea.appendChild(card);
+  });
+}
+
+/* My posts */
+function renderMyPosts(){
+  const user = currentUser();
+  const area = document.getElementById('myPostsArea');
+  area.innerHTML = '';
+  if(!user){ area.innerHTML = '<div class="muted">Login first</div>'; return; }
+  const users = ensureUserObj();
+  const posts = readPosts();
+  const myPostIds = users[user].posts || [];
+  if(!myPostIds.length){ area.innerHTML = '<div class="muted">You have not posted anything</div>'; return; }
+  myPostIds.forEach(pid=>{
+    const p = posts[pid];
+    if(!p) return;
+    const div = document.createElement('div'); div.className='qcard';
+    div.innerHTML = `<div style="display:flex;justify-content:space-between"><div style="font-weight:600">${escapeHtml(p.title)}</div><div class="small-muted">${new Date(p.createdAt).toLocaleString()}</div></div>
+                     <div class="small-muted">Owner: ${escapeHtml(p.owner)} • Editable: ${p.editable?'yes':'no'}</div>`;
+    const row = document.createElement('div'); row.className='row';
+    const play = document.createElement('button'); play.className='small'; play.textContent='Play'; play.onclick = ()=>{
+      sessionStorage.setItem('mcq_play_temp', JSON.stringify(p.quiz)); showSection('player'); initPlayer();
+    };
+    const unpost = document.createElement('button'); unpost.className='small'; unpost.textContent='Unpost'; unpost.onclick = ()=>{
+      if(!confirm('Remove this post?')) return;
+      const all = readPosts(); delete all[pid]; writePosts(all);
+      // remove from user posts
+      const u = ensureUserObj(); u[user].posts = (u[user].posts||[]).filter(x=> x!==pid); writeStorage(USERS_KEY, u);
+      renderMyPosts();
+    };
+    row.appendChild(play); row.appendChild(unpost);
+    div.appendChild(row);
+    area.appendChild(div);
+  });
+}
+
+/* ---------------- Helpers ---------------- */
+function escapeHtml(str){ return (''+ (str||'')).replace(/[&<>"']/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function scrollToTop(){ window.scrollTo({top:0,behavior:'smooth'}); }
+
+/* ---------------- Boot ---------------- */
+(function boot(){
+  // initial UI
+  const u = currentUser();
+  if(u) afterLogin(); else showSection('login');
+  refreshHome();
+})();
+</script>
+</body>
+</html>
