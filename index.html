@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="id">
 <head>
@@ -6,20 +7,28 @@
 <title>MCQ Hub — Builder & Player (single file, accounts)</title>
 <style>
 :root{
-  --bg:#041423; --card:#071a2a; --muted:#9fb3c8; --accent:#1fb28f; --accent2:#3ea0ff;
-  --text:#eaf4ff; --glass: rgba(255,255,255,0.03);
+  --bg:#041423;
+  --card:#071a2a;
+  --muted:#9fb3c8;
+  --accent:#1fb28f;
+  --accent2:#3ea0ff;
+  --text:#eaf4ff;
+  --glass: rgba(255,255,255,0.03);
+  --drawer-bg: #0f1724;
+  --drawer-active: #4f83ff;
+  --card-elev: 0 8px 30px rgba(2,6,23,.6);
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#021426 0%,#071227 100%);color:var(--text)}
 .app{max-width:980px;margin:18px auto;padding:16px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative}
 .brand{display:flex;flex-direction:column}
 .brand h1{margin:0;font-size:20px}
 .muted{color:var(--muted);font-size:13px}
-.nav{display:flex;gap:8px}
+.nav{display:none;gap:8px} /* hidden: replaced by drawer */
 .btn{background:linear-gradient(90deg,var(--accent2),var(--accent));color:#021;padding:10px 12px;border-radius:10px;border:0;cursor:pointer;text-decoration:none}
 .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text)}
-.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:16px;margin-top:14px;box-shadow:0 8px 30px rgba(2,6,23,.6)}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:16px;margin-top:14px;box-shadow:var(--card-elev)}
 .grid{display:flex;gap:10px;flex-wrap:wrap}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .small{padding:8px 10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
@@ -54,9 +63,82 @@ textarea{min-height:70px}
 @media(min-width:900px){.feed-grid{grid-template-columns:repeat(3,1fr)}}
 .login-card{max-width:420px;margin:40px auto;padding:20px}
 .small-muted{font-size:12px;color:var(--muted)}
+
+/* === Drawer Menu Modern Card UI (A) === */
+.hamburger {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  font-size: 20px;
+  color: var(--text);
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 2000;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  left: -280px;
+  width: 280px;
+  height: 100%;
+  background: linear-gradient(180deg,#071427 0%, #06101b 100%);
+  color: var(--text);
+  padding: 20px;
+  box-shadow: 6px 0 24px rgba(0,0,0,0.6);
+  transition: 260ms cubic-bezier(.2,.9,.2,1);
+  z-index: 1999;
+  border-right: 1px solid rgba(255,255,255,0.02);
+  display:flex;flex-direction:column;gap:10px;
+}
+.drawer.open { left: 0; }
+.drawer-header {
+  font-size:22px;font-weight:700;color:var(--drawer-active);margin-bottom:6px;
+}
+.drawer-sub { color:var(--muted); font-size:13px; margin-bottom:8px; }
+.drawer-item {
+  width:100%; padding:12px 14px; text-align:left; font-size:15px; border-radius:10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.02); color:var(--text); cursor:pointer;
+  display:flex;align-items:center;gap:10px;
+}
+.drawer-item:hover{ transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+.drawer-item.active {
+  background: linear-gradient(90deg, rgba(79,131,255,0.12), rgba(79,131,255,0.06));
+  border: 2px solid var(--drawer-active); color:var(--text);
+  box-shadow: 0 10px 30px rgba(79,131,255,0.06);
+}
+
+/* overlay for closing */
+.overlay {
+  position: fixed; inset:0; background: rgba(0,0,0,0.45);
+  display:none; z-index:1500; backdrop-filter: blur(2px);
+}
+.overlay.show { display:block; }
+
+/* small responsive tweak: push main content when drawer open */
+.drawer.open ~ .app { transform: translateX(260px); transition: transform 260ms cubic-bezier(.2,.9,.2,1); }
+@media(max-width:560px){ .drawer { width: 92%; } .drawer.open ~ .app { transform: translateX(92%); } }
 </style>
 </head>
 <body>
+<!-- Hamburger + Drawer -->
+<div id="hamburger" class="hamburger" title="Menu">☰</div>
+<div id="drawer" class="drawer" aria-hidden="true">
+  <div class="drawer-header">MCQ Hub</div>
+  <div class="drawer-sub">Quick navigation</div>
+  <button class="drawer-item" data-target="home">🏠 Home</button>
+  <button class="drawer-item" data-target="builder">✍️ Builder</button>
+  <button class="drawer-item" data-target="player">▶ Play</button>
+  <button class="drawer-item" data-target="explore">🔎 Explore</button>
+  <button class="drawer-item" data-target="myposts">📦 My Posts</button>
+  <div style="flex:1"></div>
+  <button class="drawer-item" data-target="login" id="drawerAccountBtn">👤 Account</button>
+</div>
+<div id="overlay" class="overlay"></div>
+
 <div class="app">
   <div class="top">
     <div class="brand">
@@ -73,7 +155,7 @@ textarea{min-height:70px}
     </div>
   </div>
 
-  <!-- LOGIN (replaces initial Home until login) -->
+  <!-- LOGIN -->
   <section id="login" class="section active">
     <div class="card login-card center">
       <h2 class="center">Login / Register</h2>
@@ -149,6 +231,16 @@ textarea{min-height:70px}
       <div class="form-grid" style="margin-top:12px">
         <label>Quiz Title <input id="quizTitle" placeholder="Give your quiz a title (optional)"></label>
         <label>Thumbnail (optional) <input id="quizThumb" type="file" accept="image/*"></label>
+
+        <!-- Fast Import parser (new) -->
+        <div style="margin:8px 0;padding:10px;border-radius:8px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)">
+          <label style="font-weight:600;color:var(--muted)">Fast Import (paste multiple questions):</label>
+          <textarea id="fastImport" placeholder="Soal: ....&#10;A: ...&#10;B: ...&#10;C: ...&#10;D: ...&#10;E: ...&#10;Jawaban: B" style="width:100%;height:120px;padding:8px;margin-top:8px"></textarea>
+          <div class="row" style="margin-top:8px">
+            <button class="small" id="parseBtn">Parse to Builder</button>
+            <div class="muted" style="font-size:12px">Use blank line between questions.</div>
+          </div>
+        </div>
 
         <label>Question
           <textarea id="q_text" placeholder="Type the question..."></textarea>
@@ -338,13 +430,46 @@ const userAvatarEl = document.getElementById('userAvatar');
 const userMetaEl = document.getElementById('userMeta');
 const brandSubtitle = document.getElementById('brandSubtitle');
 
-/* show/hide sections */
+/* show/hide sections + drawer active sync */
 function showSection(id){
   Object.values(sections).forEach(s=>s.classList.remove('active'));
   if(sections[id]) sections[id].classList.add('active');
-  // header nav visibility
+  // header nav visibility (kept for compatibility)
   document.getElementById('btnLogout').style.display = currentUser() ? 'inline-block' : 'none';
+
+  // update drawer active
+  document.querySelectorAll('.drawer-item').forEach(el=>{
+    el.classList.remove('active');
+    if(el.dataset && el.dataset.target === id) el.classList.add('active');
+  });
+  // if drawer open on mobile, close it
+  drawer.classList.remove('open');
+  overlay.classList.remove('show');
 }
+
+/* ---------------- Drawer logic (UI) ---------------- */
+const drawer = document.getElementById("drawer");
+const overlay = document.getElementById("overlay");
+const hamburger = document.getElementById("hamburger");
+const drawerItems = document.querySelectorAll(".drawer-item");
+
+hamburger.onclick = () => {
+  drawer.classList.add("open");
+    overlay.classList.add("show");
+};
+overlay.onclick = () => {
+  drawer.classList.remove("open");
+  overlay.classList.remove("show");
+};
+drawerItems.forEach(btn => {
+  btn.onclick = () => {
+    const target = btn.dataset.target;
+    if(target) {
+      showSection(target);
+    }
+  };
+});
+document.querySelector('.drawer-item[data-target="home"]').classList.add("active");
 
 /* ---------------- Init UI events (nav + login) ---------------- */
 document.getElementById('btnLogin').onclick = ()=>{
@@ -365,7 +490,6 @@ document.getElementById('btnCreate').onclick = ()=>{
   afterLogin();
 };
 document.getElementById('btnContinueGuest').onclick = ()=>{
-  // create ephemeral guest user with random name
   const guest = 'guest_' + uid(4);
   createAccount(guest, 'guest');
   loginUser(guest, 'guest');
@@ -377,11 +501,7 @@ document.getElementById('btnLogout').onclick = ()=>{
   location.reload();
 };
 
-/* nav buttons */
-document.getElementById('navHome').onclick = ()=> { showSection('home'); refreshHome(); };
-document.getElementById('navBuilder').onclick = ()=> { showSection('builder'); initBuilder(); };
-document.getElementById('navPlayer').onclick = ()=> { showSection('player'); initPlayer(); };
-document.getElementById('navExplore').onclick = ()=> { showSection('explore'); renderFeed(); };
+/* nav fallback (kept for compatibility) */
 document.getElementById('goCreate').onclick = ()=> { showSection('builder'); initBuilder(); scrollToTop(); };
 document.getElementById('goPlay').onclick = ()=> { showSection('player'); initPlayer(); };
 
@@ -392,7 +512,6 @@ document.getElementById('applyPaste').onclick = ()=>{
   try{
     const parsed = JSON.parse(txt);
     if(parsed.questions || Array.isArray(parsed)){
-      // store as draft in appState
       appState.draft = { id: null, title: parsed.title || '', thumbnail: parsed.thumbnail||null, questions: parsed.questions || parsed };
       alert('Applied JSON to draft. Go to Builder to edit/save.');
       showSection('builder'); initBuilder();
@@ -405,13 +524,10 @@ document.getElementById('sampleCSV').onclick = ()=>{
 
 /* Publish current quiz UI */
 document.getElementById('btnPublish').onclick = ()=>{
-  // require logged in
   const user = currentUser();
   if(!user){ alert('Login first'); showSection('login'); return; }
-  // ensure draft exists or load last saved quiz
   let quiz = appState.draft;
   if(!quiz || !quiz.questions || !quiz.questions.length){
-    // try last saved quiz from account
     const users = ensureUserObj();
     const uobj = users[user];
     const lastId = localStorage.getItem(SESSION_LAST_QUIZ);
@@ -430,12 +546,11 @@ document.getElementById('btnPublish').onclick = ()=>{
     owner: user,
     title,
     thumbnail,
-    quiz: JSON.parse(JSON.stringify(quiz)), // copy
+    quiz: JSON.parse(JSON.stringify(quiz)),
     editable: Boolean(editable),
     createdAt: now()
   };
   writePosts(posts);
-  // register post to user
   const users = ensureUserObj();
   users[user].posts = users[user].posts || [];
   users[user].posts.unshift(postId);
@@ -472,12 +587,10 @@ function refreshHome(){
 /* After login actions */
 function afterLogin(){
   refreshHome();
-  // load last draft if exists
   const user = currentUser();
   if(user){
     const users = ensureUserObj();
     const uobj = users[user];
-    // if there is session last quiz id, load that into draft
     const lastId = localStorage.getItem(SESSION_LAST_QUIZ);
     if(lastId && uobj && uobj.quizzes && uobj.quizzes[lastId]){
       appState.draft = JSON.parse(JSON.stringify(uobj.quizzes[lastId]));
@@ -491,7 +604,6 @@ function initBuilder(){
   showSection('builder');
   refreshHome();
 
-  // form elements
   const q_text = document.getElementById('q_text');
   const q_image = document.getElementById('q_image');
   const q_audio = document.getElementById('q_audio');
@@ -508,9 +620,7 @@ function initBuilder(){
   const quizTitle = document.getElementById('quizTitle');
   const quizThumb = document.getElementById('quizThumb');
 
-  // load draft into form if exists
   if(!appState.draft) appState.draft = { id:null, title:'', thumbnail:null, questions:[] };
-  // if draft empty and user has last saved quiz, try load it
   if(appState.draft && appState.draft.questions && appState.draft.questions.length){
     // use as-is
   } else {
@@ -523,7 +633,6 @@ function initBuilder(){
       }
     }
   }
-  // ensure structure
   if(!appState.draft.title) appState.draft.title = '';
   if(!appState.draft.thumbnail) appState.draft.thumbnail = null;
   if(!appState.draft.questions) appState.draft.questions = [];
@@ -553,7 +662,6 @@ function initBuilder(){
       optlist.innerHTML = `A: ${qq.options[0]||''} • B: ${qq.options[1]||''} • C: ${qq.options[2]||''} • D: ${qq.options[3]||''} • E: ${qq.options[4]||''} <br><em>Answer: ${qq.answer||''}</em>`;
       div.appendChild(optlist);
 
-      // if audio present, show play
       if(qq.audio){
         const play = document.createElement('button'); play.className='small'; play.textContent='Play Q Audio';
         play.onclick = ()=> { const a = new Audio(qq.audio); a.play(); };
@@ -569,7 +677,6 @@ function initBuilder(){
     q_text.value=''; optA.value=''; optB.value=''; optC.value=''; optD.value=''; optE.value=''; optCorrect.value='A'; q_explain.value=''; q_image.value=''; q_audio.value='';
   }
 
-  // thumbnail upload handler (for whole quiz)
   quizThumb.onchange = (e)=>{
     const f = e.target.files[0];
     if(!f) return;
@@ -578,18 +685,53 @@ function initBuilder(){
     fr.readAsDataURL(f);
   };
 
-  // Add / Save question
+  // Parse fast import button
+  const parseBtn = document.getElementById('parseBtn');
+  parseBtn.onclick = ()=>{
+    const raw = document.getElementById('fastImport').value.trim();
+    if(!raw) return alert('Paste soal dulu pada Fast Import.');
+    // split blocks by blank line
+    const blocks = raw.split(/\n\s*\n/);
+    let added = 0;
+    blocks.forEach(block=>{
+      const lines = block.split(/\n/).map(l=>l.trim()).filter(Boolean);
+      const qObj = { question:'', options:['','','','',''], answer:'', explanation:'' };
+      lines.forEach(line=>{
+        if(/^Soal\s*:/i.test(line)) qObj.question = line.replace(/^Soal\s*:/i,'').trim();
+        else if(/^A\s*:/i.test(line)) qObj.options[0] = line.replace(/^A\s*:/i,'').trim();
+        else if(/^B\s*:/i.test(line)) qObj.options[1] = line.replace(/^B\s*:/i,'').trim();
+        else if(/^C\s*:/i.test(line)) qObj.options[2] = line.replace(/^C\s*:/i,'').trim();
+        else if(/^D\s*:/i.test(line)) qObj.options[3] = line.replace(/^D\s*:/i,'').trim();
+        else if(/^E\s*:/i.test(line)) qObj.options[4] = line.replace(/^E\s*:/i,'').trim();
+        else if(/^Jawaban\s*:/i.test(line)) qObj.answer = line.replace(/^Jawaban\s*:/i,'').trim().toUpperCase();
+        else if(/^Explanation\s*:/i.test(line)) qObj.explanation = line.replace(/^Explanation\s*:/i,'').trim();
+      });
+      if(qObj.question && qObj.answer){
+        const item = {
+          id: 'q_'+uid(8),
+          question: qObj.question,
+          options: qObj.options,
+          answer: qObj.answer,
+          explanation: qObj.explanation || '',
+          image: null,
+          audio: null,
+          createdAt: now()
+        };
+        appState.draft.questions.push(item);
+        added++;
+      }
+    });
+    renderList();
+    alert(`${added} soal diimport ke draft.`);
+    document.getElementById('fastImport').value = '';
+  };
+
   addQ.onclick = async ()=>{
     if(!q_text.value.trim()){ alert('Fill question'); return; }
     const choices = [optA.value.trim(), optB.value.trim(), optC.value.trim(), optD.value.trim(), optE.value.trim()];
-    // read image + audio sequentially if provided
     let imageData = null, audioData = null;
-    if(q_image.files && q_image.files[0]){
-      imageData = await readFileAsDataURL(q_image.files[0]);
-    }
-    if(q_audio.files && q_audio.files[0]){
-      audioData = await readFileAsDataURL(q_audio.files[0]);
-    }
+    if(q_image.files && q_image.files[0]) imageData = await readFileAsDataURL(q_image.files[0]);
+    if(q_audio.files && q_audio.files[0]) audioData = await readFileAsDataURL(q_audio.files[0]);
     const item = {
       id: uid(10),
       question: q_text.value.trim(),
@@ -600,13 +742,11 @@ function initBuilder(){
       audio: audioData,
       createdAt: now()
     };
-    // If editing existing (we remove old on edit), simple push back
     appState.draft.questions.push(item);
     renderList(); resetForm();
     alert('Question added to draft.');
   };
 
-  // list actions (delete/edit)
   listArea.onclick = (e)=>{
     const b = e.target.closest('button');
     if(!b || !b.dataset.action) return;
@@ -616,44 +756,36 @@ function initBuilder(){
     if(act==='del'){ if(confirm('Delete this question?')){ appState.draft.questions.splice(idx,1); renderList(); } }
     if(act==='edit'){
       const q = appState.draft.questions[idx];
-      // populate form
       q_text.value = q.question || '';
       optA.value = q.options[0]||''; optB.value = q.options[1]||''; optC.value = q.options[2]||''; optD.value = q.options[3]||''; optE.value = q.options[4]||'';
       optCorrect.value = q.answer||'A'; q_explain.value = q.explanation||'';
-      // remove old item
       appState.draft.questions.splice(idx,1);
       renderList();
       scrollToTop();
     }
   };
 
-  // Save to account (store quiz into user's quizzes)
   document.getElementById('saveToAccount').onclick = ()=>{
     const user = currentUser();
     if(!user){ alert('Login to save to account'); showSection('login'); return; }
     const title = quizTitle.value.trim() || prompt('Quiz title (short):', appState.draft.title || '') || 'Untitled Quiz';
     appState.draft.title = title;
-    // ensure id
     if(!appState.draft.id) appState.draft.id = 'quiz_'+uid(6);
-    // write to user object
     const users = ensureUserObj();
     users[user].quizzes = users[user].quizzes || {};
     users[user].quizzes[appState.draft.id] = JSON.parse(JSON.stringify(appState.draft));
     writeStorage(USERS_KEY, users);
-    // record last quiz id in session
     localStorage.setItem(SESSION_LAST_QUIZ, appState.draft.id);
     alert('Saved to your account.');
     refreshHome();
   };
 
-  // export JSON
   document.getElementById('saveJSON').onclick = ()=>{
     if(!appState.draft || !appState.draft.questions.length){ alert('No quiz to export'); return; }
     const blob = new Blob([JSON.stringify(appState.draft, null, 2)], {type:'application/json'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mcq_quiz.json'; a.click();
   };
 
-  // export CSV
   document.getElementById('exportCSV').onclick = ()=>{
     if(!appState.draft || !appState.draft.questions.length){ alert('No questions to export'); return; }
     const lines = appState.draft.questions.map(q=> [q.question, ...(q.options||[]).slice(0,5), q.answer, q.explanation||''].join(' | '));
@@ -666,9 +798,7 @@ function initBuilder(){
   };
 
   document.getElementById('startPlay').onclick = ()=>{
-    // save draft to session (not necessarily account) so player can load
     if(!appState.draft || !appState.draft.questions.length){ alert('No questions to play'); return; }
-    // store temporary to sessionStorage to allow player to pick up
     sessionStorage.setItem('mcq_play_temp', JSON.stringify(appState.draft));
     localStorage.setItem(SESSION_LAST_QUIZ, appState.draft.id || '');
     showSection('player'); initPlayer();
@@ -692,7 +822,6 @@ function initPlayer(){
   showSection('player');
   refreshHome();
 
-  // load quiz: prefer session temp, else last saved from account
   let quiz = null;
   const temp = sessionStorage.getItem('mcq_play_temp');
   if(temp){
@@ -707,7 +836,6 @@ function initPlayer(){
   }
   if(!quiz){ alert('No quiz available to play. Create or load one first.'); showSection('builder'); return; }
 
-  // player state
   let questions = (quiz.questions||[]).slice();
   let current = 0, score = 0, answered = 0;
   const qText = document.getElementById('qText');
@@ -724,9 +852,7 @@ function initPlayer(){
   const restartBtn = document.getElementById('restartBtn');
   const progressFill = document.getElementById('progressFill');
 
-  // per-question answer memory
-  const userAnswers = {}; // id -> {choice, correct}
-
+  const userAnswers = {};
   let autoTimer = null;
 
   function render(){
@@ -745,7 +871,6 @@ function initPlayer(){
       choicesEl.appendChild(btn);
     });
 
-    // restore previous answer if any
     const prev = userAnswers[q.id];
     if(prev){
       Array.from(choicesEl.children).forEach(b=>{
@@ -767,11 +892,9 @@ function initPlayer(){
   function selectChoice(btn, letter){
     if(!questions.length) return;
     const q = questions[current];
-    // disable answers
     Array.from(choicesEl.children).forEach(b=> b.disabled = true);
     const correct = (letter === q.answer);
     if(correct){ btn.classList.add('correct'); score++; playCorrect(); } else { btn.classList.add('wrong'); playWrong(); }
-    // highlight correct if wrong
     if(!correct){
       const corr = Array.from(choicesEl.children).find(b => b.dataset.choice === q.answer);
       if(corr) corr.classList.add('correct');
@@ -782,16 +905,11 @@ function initPlayer(){
       explainEl.innerHTML = `<strong>Jawaban: ${q.answer}</strong><div style="margin-top:8px;color:var(--muted)">${escapeHtml(q.explanation)}</div>`;
     }
     scoreText.textContent = score;
-    // save to memory so prev works
     userAnswers[q.id] = { choice: letter, correct };
-
-    // if question has audio, play
     if(q.audio){
       const a = new Audio(q.audio);
-      a.play().catch(()=>{ /* ignore */ });
+      a.play().catch(()=>{});
     }
-
-    // auto next
     if(autoNext.checked){
       clearTimeout(autoTimer);
       autoTimer = setTimeout(()=> goNext(), Number(delayEl.value) || 900);
@@ -802,12 +920,10 @@ function initPlayer(){
     if(!questions.length) return;
     if(current < questions.length - 1){ current++; render(); }
     else {
-      // finished
       qText.textContent = 'Done! 🎉'; choicesEl.innerHTML=''; explainEl.style.display='block';
       explainEl.innerHTML = `<div>Score: ${score} / ${answered} (${questions.length} questions)</div>`;
       progressText.textContent = `${questions.length} / ${questions.length}`;
       progressFill.style.width = '100%';
-      // clear temp session
       sessionStorage.removeItem('mcq_play_temp');
     }
   }
@@ -823,7 +939,6 @@ function initPlayer(){
   prevBtn.onclick = ()=> goPrev();
   restartBtn.onclick = ()=> { if(confirm('Restart quiz?')){ current = 0; score = 0; answered = 0; for(const k in userAnswers) delete userAnswers[k]; render(); } };
 
-  // keyboard support
   window.addEventListener('keydown', (e)=>{
     const k = e.key.toUpperCase();
     if(['A','B','C','D','E'].includes(k)){
@@ -854,7 +969,6 @@ function renderFeed(){
     const row = document.createElement('div'); row.className='row';
     const play = document.createElement('button'); play.className='small'; play.textContent='Play';
     play.onclick = ()=>{
-      // load this post's quiz into session and go to player
       sessionStorage.setItem('mcq_play_temp', JSON.stringify(p.quiz));
       showSection('player'); initPlayer();
     };
@@ -862,9 +976,7 @@ function renderFeed(){
     if(currentUser() === p.owner){
       const edit = document.createElement('button'); edit.className='small'; edit.textContent='Edit Post';
       edit.onclick = ()=>{
-        // if editable true or owner, allow editing the quiz in builder
         sessionStorage.setItem('mcq_play_temp', JSON.stringify(p.quiz));
-        // load into draft and allow user to save
         appState.draft = JSON.parse(JSON.stringify(p.quiz));
         showSection('builder'); initBuilder();
       };
@@ -898,7 +1010,6 @@ function renderMyPosts(){
     const unpost = document.createElement('button'); unpost.className='small'; unpost.textContent='Unpost'; unpost.onclick = ()=>{
       if(!confirm('Remove this post?')) return;
       const all = readPosts(); delete all[pid]; writePosts(all);
-      // remove from user posts
       const u = ensureUserObj(); u[user].posts = (u[user].posts||[]).filter(x=> x!==pid); writeStorage(USERS_KEY, u);
       renderMyPosts();
     };
@@ -914,7 +1025,6 @@ function scrollToTop(){ window.scrollTo({top:0,behavior:'smooth'}); }
 
 /* ---------------- Boot ---------------- */
 (function boot(){
-  // initial UI
   const u = currentUser();
   if(u) afterLogin(); else showSection('login');
   refreshHome();
